@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: retail-store-config
+  namespace: retail-store
+data:
+  APP_PORT: "8080"
+  APP_ENV: "production"
+  SOCKET_PORT: "8081"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "retail_store"
+  DB_SSL_MODE: "disable"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  NATS_URL: "nats://nats:4222"
+  ELASTICSEARCH_ADDRESSES: "http://elasticsearch:9200"
+  ELASTICSEARCH_PRODUCT_INDEX: "products"
+  LOG_LEVEL: "info"
+  LOGSTASH_ADDRESS: "logstash:5044"
