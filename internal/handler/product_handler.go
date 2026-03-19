@@ -5,10 +5,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/internal/model/request"
 	"github.com/kainguyen/retail-store-api/internal/service"
-	appnats "github.com/kainguyen/retail-store-api/pkg/nats"
 	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
 )
 
@@ -16,11 +15,8 @@ type ProductHandler struct {
 	service *service.ProductService
 }
 
-func NewProductHandler(queries *db.Queries, publisher *appnats.Publisher) *ProductHandler {
-	return &ProductHandler{service: service.NewProductService(queries, publisher)}
-}
-
-func (h *ProductHandler) RegisterRoutes(router *gin.Engine) {
+func NewProductHandler(ctx *app.AppContext, router *gin.Engine) *ProductHandler {
+	h := &ProductHandler{service: service.NewProductService(ctx.Queries, ctx.Publisher)}
 	products := router.Group("/api/v1/products")
 	{
 		products.POST("", h.Create)
@@ -29,6 +25,7 @@ func (h *ProductHandler) RegisterRoutes(router *gin.Engine) {
 		products.PUT("/:id", h.Update)
 		products.DELETE("/:id", h.Delete)
 	}
+	return h
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {

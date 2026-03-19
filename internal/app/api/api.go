@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 
 	db "github.com/kainguyen/retail-store-api/db/sqlc"
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/internal/config"
 	"github.com/kainguyen/retail-store-api/pkg/database"
 	es "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
@@ -24,12 +24,11 @@ import (
 )
 
 type App struct {
-	cfg      *config.Config
-	pool     *pgxpool.Pool
-	rdb      *redis.Client
-	nc       *nats.Conn
-	esClient *elasticsearch.Client
-	server   *http.Server
+	cfg    *config.Config
+	pool   *pgxpool.Pool
+	rdb    *redis.Client
+	nc     *nats.Conn
+	server *http.Server
 }
 
 func New() (*App, error) {
@@ -80,15 +79,22 @@ func New() (*App, error) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	appCtx := &app.AppContext{
+		Config:       cfg,
+		Queries:      queries,
+		ESClient:     esClient,
+		ProductIndex: cfg.Elasticsearch.ProductIndex,
+		Publisher:    publisher,
+	}
+
 	return &App{
-		cfg:      cfg,
-		pool:     pool,
-		rdb:      rdb,
-		nc:       nc,
-		esClient: esClient,
+		cfg:  cfg,
+		pool: pool,
+		rdb:  rdb,
+		nc:   nc,
 		server: &http.Server{
 			Addr:    ":" + cfg.App.Port,
-			Handler: NewRouter(queries, esClient, cfg.Elasticsearch.ProductIndex, publisher),
+			Handler: NewRouter(appCtx),
 		},
 	}, nil
 }

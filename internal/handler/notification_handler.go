@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/pkg/notification"
 )
 
@@ -19,12 +20,10 @@ type NotificationHandler struct {
 	hub *notification.Hub
 }
 
-func NewNotificationHandler(hub *notification.Hub) *NotificationHandler {
-	return &NotificationHandler{hub: hub}
-}
-
-func (h *NotificationHandler) RegisterRoutes(router *gin.Engine) {
+func NewNotificationHandler(ctx *app.AppContext, router *gin.Engine) *NotificationHandler {
+	h := &NotificationHandler{hub: ctx.Hub}
 	router.GET("/api/v1/ws/notifications", h.HandleWebSocket)
+	return h
 }
 
 func (h *NotificationHandler) HandleWebSocket(c *gin.Context) {

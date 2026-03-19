@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/internal/model/request"
 	"github.com/kainguyen/retail-store-api/internal/service"
 	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
@@ -15,11 +15,8 @@ type CategoryHandler struct {
 	service *service.CategoryService
 }
 
-func NewCategoryHandler(queries *db.Queries) *CategoryHandler {
-	return &CategoryHandler{service: service.NewCategoryService(queries)}
-}
-
-func (h *CategoryHandler) RegisterRoutes(router *gin.Engine) {
+func NewCategoryHandler(ctx *app.AppContext, router *gin.Engine) *CategoryHandler {
+	h := &CategoryHandler{service: service.NewCategoryService(ctx.Queries)}
 	categories := router.Group("/api/v1/categories")
 	{
 		categories.POST("", h.Create)
@@ -28,6 +25,7 @@ func (h *CategoryHandler) RegisterRoutes(router *gin.Engine) {
 		categories.PUT("/:id", h.Update)
 		categories.DELETE("/:id", h.Delete)
 	}
+	return h
 }
 
 func (h *CategoryHandler) Create(c *gin.Context) {

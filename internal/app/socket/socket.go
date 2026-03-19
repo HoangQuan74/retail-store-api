@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/internal/config"
 	"github.com/kainguyen/retail-store-api/pkg/database"
 	"github.com/kainguyen/retail-store-api/pkg/logger"
@@ -45,13 +46,18 @@ func New() (*App, error) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	appCtx := &app.AppContext{
+		Config: cfg,
+		Hub:    hub,
+	}
+
 	return &App{
 		cfg: cfg,
 		rdb: rdb,
 		hub: hub,
 		server: &http.Server{
 			Addr:    ":" + cfg.Socket.Port,
-			Handler: NewRouter(hub),
+			Handler: NewRouter(appCtx),
 		},
 	}, nil
 }

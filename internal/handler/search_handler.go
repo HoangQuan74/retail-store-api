@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
+	"github.com/kainguyen/retail-store-api/internal/app"
 	"github.com/kainguyen/retail-store-api/internal/model/request"
 	"github.com/kainguyen/retail-store-api/internal/service"
 	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
@@ -14,12 +14,10 @@ type SearchHandler struct {
 	service *service.SearchService
 }
 
-func NewSearchHandler(client *elasticsearch.Client, indexName string) *SearchHandler {
-	return &SearchHandler{service: service.NewSearchService(client, indexName)}
-}
-
-func (h *SearchHandler) RegisterRoutes(router *gin.Engine) {
+func NewSearchHandler(ctx *app.AppContext, router *gin.Engine) *SearchHandler {
+	h := &SearchHandler{service: service.NewSearchService(ctx.ESClient, ctx.ProductIndex)}
 	router.GET("/api/v1/search/products", h.SearchProducts)
+	return h
 }
 
 func (h *SearchHandler) SearchProducts(c *gin.Context) {
