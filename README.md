@@ -190,6 +190,28 @@ DELETE /api/v1/products/:id
 ws://localhost:8081/api/v1/ws/notifications
 ```
 
+## Swagger
+
+Swagger UI có sẵn tại `http://localhost:8080/swagger/index.html` khi chạy API server.
+
+Sau khi thêm/sửa swagger annotations, chạy lại:
+
+```bash
+make swagger
+```
+
+### Snippets
+
+Trong Cursor/VSCode, gõ prefix rồi nhấn **Tab** để sinh swagger annotation block:
+
+| Prefix | Sinh ra |
+|---|---|
+| `swag-get` | GET endpoint (với path param) |
+| `swag-list` | GET list (có sẵn limit/offset) |
+| `swag-post` | POST endpoint (có body) |
+| `swag-put` | PUT endpoint (có id + body) |
+| `swag-del` | DELETE endpoint (có id) |
+
 ## Thêm tính năng mới
 
 ### Thêm API endpoint mới
@@ -197,8 +219,9 @@ ws://localhost:8081/api/v1/ws/notifications
 1. Tạo request/response struct trong `internal/model/request/` và `internal/model/response/`
 2. Tạo repository trong `internal/repository/`
 3. Tạo service trong `internal/service/`
-4. Tạo handler trong `internal/handler/` với method `RegisterRoutes(router *gin.Engine)`
+4. Tạo handler trong `internal/handler/`, dùng snippet `swag-*` để thêm swagger annotations
 5. Đăng ký handler trong `internal/app/api/router.go`
+6. Chạy `make swagger` để cập nhật docs
 
 ### Thêm consumer handler mới
 
@@ -226,5 +249,6 @@ ws://localhost:8081/api/v1/ws/notifications
 | `make run-consumer` | Chạy NATS consumer |
 | `make build` | Build tất cả ra thư mục `bin/` |
 | `make sqlc` | Generate Go code từ SQL |
+| `make swagger` | Generate swagger docs |
 | `make migrate-up` | Chạy migration |
 | `make migrate-down` | Rollback migration |

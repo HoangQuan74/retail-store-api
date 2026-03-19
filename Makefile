@@ -16,6 +16,9 @@ build:
 sqlc:
 	sqlc generate
 
+swagger:
+	$(HOME)/go/bin/swag init -g cmd/api/main.go --parseDependency --parseInternal
+
 migrate-up:
 	migrate -path db/migration -database "postgresql://postgres:postgres@localhost:5432/retail_store?sslmode=disable" -verbose up
 
@@ -50,6 +53,6 @@ k8s-delete-dev:
 k8s-delete-prod:
 	kubectl delete -k deploy/k8s/overlays/prod
 
-.PHONY: run-api run-socket run-consumer build sqlc migrate-up migrate-down \
+.PHONY: run-api run-socket run-consumer build sqlc swagger migrate-up migrate-down \
 	docker-up docker-down docker-build docker-infra \
 	k8s-dev k8s-prod k8s-delete-dev k8s-delete-prod

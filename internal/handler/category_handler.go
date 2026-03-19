@@ -28,6 +28,15 @@ func NewCategoryHandler(ctx *app.AppContext, router *gin.Engine) *CategoryHandle
 	return h
 }
 
+// @Summary	Create a category
+// @Tags	categories
+// @Accept	json
+// @Produce	json
+// @Param	body body request.CreateCategoryRequest true "Category payload"
+// @Success	201 {object} response.CategoryAPIResponse
+// @Failure	400 {object} response.ErrorResponse
+// @Failure	500 {object} response.ErrorResponse
+// @Router	/categories [post]
 func (h *CategoryHandler) Create(c *gin.Context) {
 	var req request.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,6 +53,13 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 	pkgResponse.Success(c, http.StatusCreated, "Category created", category)
 }
 
+// swag-list
+// @Summary	List all categories
+// @Tags	categories
+// @Produce	json
+// @Success	200 {object} response.CategoryListAPIResponse
+// @Failure	500 {object} response.ErrorResponse
+// @Router	/categories [get]
 func (h *CategoryHandler) List(c *gin.Context) {
 	categories, err := h.service.List(c.Request.Context())
 	if err != nil {
@@ -54,6 +70,14 @@ func (h *CategoryHandler) List(c *gin.Context) {
 	pkgResponse.Success(c, http.StatusOK, "Success", categories)
 }
 
+// @Summary	Get category by ID
+// @Tags	categories
+// @Produce	json
+// @Param	id path int true "Category ID"
+// @Success	200 {object} response.CategoryAPIResponse
+// @Failure	400 {object} response.ErrorResponse
+// @Failure	404 {object} response.ErrorResponse
+// @Router	/categories/{id} [get]
 func (h *CategoryHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -70,6 +94,16 @@ func (h *CategoryHandler) GetByID(c *gin.Context) {
 	pkgResponse.Success(c, http.StatusOK, "Success", category)
 }
 
+// @Summary	Update a category
+// @Tags	categories
+// @Accept	json
+// @Produce	json
+// @Param	id path int true "Category ID"
+// @Param	body body request.UpdateCategoryRequest true "Category payload"
+// @Success	200 {object} response.CategoryAPIResponse
+// @Failure	400 {object} response.ErrorResponse
+// @Failure	500 {object} response.ErrorResponse
+// @Router	/categories/{id} [put]
 func (h *CategoryHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -92,6 +126,14 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 	pkgResponse.Success(c, http.StatusOK, "Category updated", category)
 }
 
+// @Summary	Delete a category
+// @Tags	categories
+// @Produce	json
+// @Param	id path int true "Category ID"
+// @Success	200 {object} response.ErrorResponse
+// @Failure	400 {object} response.ErrorResponse
+// @Failure	500 {object} response.ErrorResponse
+// @Router	/categories/{id} [delete]
 func (h *CategoryHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

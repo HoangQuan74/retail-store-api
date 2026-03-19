@@ -20,6 +20,16 @@ func NewSearchHandler(ctx *app.AppContext, router *gin.Engine) *SearchHandler {
 	return h
 }
 
+// @Summary	Search products
+// @Tags	search
+// @Produce	json
+// @Param	q query string true "Search query" minLength(1)
+// @Param	limit query int false "Limit" default(20) minimum(1) maximum(100)
+// @Param	offset query int false "Offset" default(0) minimum(0)
+// @Success	200 {object} response.SearchProductAPIResponse
+// @Failure	400 {object} response.ErrorResponse
+// @Failure	500 {object} response.ErrorResponse
+// @Router	/search/products [get]
 func (h *SearchHandler) SearchProducts(c *gin.Context) {
 	var req request.SearchProductRequest
 	if err := c.ShouldBindQuery(&req); err != nil {

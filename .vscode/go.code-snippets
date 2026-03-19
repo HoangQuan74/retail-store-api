@@ -1,0 +1,80 @@
+{
+  "Swagger GET": {
+    "scope": "go",
+    "prefix": "swag-get",
+    "body": [
+      "// @Summary\t${1:Summary}",
+      "// @Tags\t${2:tag}",
+      "// @Produce\tjson",
+      "// @Param\t${3:id path int true \"ID\"}",
+      "// @Success\t200 {object} ${4:response.Type}",
+      "// @Failure\t400 {object} response.ErrorResponse",
+      "// @Failure\t500 {object} response.ErrorResponse",
+      "// @Router\t${5:/path} [get]"
+    ],
+    "description": "Swagger GET endpoint"
+  },
+  "Swagger GET list": {
+    "scope": "go",
+    "prefix": "swag-list",
+    "body": [
+      "// @Summary\t${1:Summary}",
+      "// @Tags\t${2:tag}",
+      "// @Produce\tjson",
+      "// @Param\tlimit query int false \"Limit\" default(20) minimum(1) maximum(100)",
+      "// @Param\toffset query int false \"Offset\" default(0) minimum(0)",
+      "// @Success\t200 {object} ${3:response.Type}",
+      "// @Failure\t500 {object} response.ErrorResponse",
+      "// @Router\t${4:/path} [get]"
+    ],
+    "description": "Swagger GET list endpoint with pagination"
+  },
+  "Swagger POST": {
+    "scope": "go",
+    "prefix": "swag-post",
+    "body": [
+      "// @Summary\t${1:Summary}",
+      "// @Tags\t${2:tag}",
+      "// @Accept\tjson",
+      "// @Produce\tjson",
+      "// @Param\tbody body ${3:request.Type} true \"Payload\"",
+      "// @Success\t201 {object} ${4:response.Type}",
+      "// @Failure\t400 {object} response.ErrorResponse",
+      "// @Failure\t500 {object} response.ErrorResponse",
+      "// @Router\t${5:/path} [post]"
+    ],
+    "description": "Swagger POST endpoint"
+  },
+  "Swagger PUT": {
+    "scope": "go",
+    "prefix": "swag-put",
+    "body": [
+      "// @Summary\t${1:Summary}",
+      "// @Tags\t${2:tag}",
+      "// @Accept\tjson",
+      "// @Produce\tjson",
+      "// @Param\tid path int true \"ID\"",
+      "// @Param\tbody body ${3:request.Type} true \"Payload\"",
+      "// @Success\t200 {object} ${4:response.Type}",
+      "// @Failure\t400 {object} response.ErrorResponse",
+      "// @Failure\t500 {object} response.ErrorResponse",
+      "// @Router\t${5:/path/{id}} [put]"
+    ],
+    "description": "Swagger PUT endpoint"
+  },
+  "Swagger DELETE": {
+    "scope": "go",
+    "prefix": "swag-del",
+    "body": [
+      "// @Summary\t${1:Summary}",
+      "// @Tags\t${2:tag}",
+      "// @Produce\tjson",
+      "// @Param\tid path int true \"ID\"",
+      "// @Success\t200 {object} response.ErrorResponse",
+      "// @Failure\t400 {object} response.ErrorResponse",
+      "// @Failure\t500 {object} response.ErrorResponse",
+      "// @Router\t${3:/path/{id}} [delete]"
+    ],
+    "description": "Swagger DELETE endpoint"
+  }
+}
