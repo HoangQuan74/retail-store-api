@@ -1,173 +1,176 @@
 # Retail Store API
 
-Hệ thống quản lý cửa hàng tạp hoá, viết bằng Go.
+A microservices-oriented backend system for retail store management, built with Go. The system is designed around an **event-driven architecture** with three independently deployable services communicating via NATS JetStream and Redis Pub/Sub.
 
-## Yêu cầu
+## Architecture Overview
 
-- Go 1.24+
-- PostgreSQL
-- Redis
-- NATS Server
-- [sqlc](https://sqlc.dev/) (generate code từ SQL)
-- [golang-migrate](https://github.com/golang-migrate/migrate) (chạy migration)
-
-## Cài đặt
-
-```bash
-# Clone repo
-git clone <repo-url>
-cd retail-store-api
-
-# Copy file env
-cp .env.example .env
-# Sửa .env cho phù hợp với môi trường local
-
-# Cài dependencies
-go mod tidy
-
-# Tạo database
-createdb retail_store
-
-# Chạy migration
-make migrate-up
-
-# Generate sqlc (nếu sửa file SQL)
-make sqlc
+```
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│   API Server    │       │  Socket Server  │       │    Consumer     │
+│    (REST)       │       │  (WebSocket)    │       │ (Event Handler) │
+│   :8080         │       │   :8081         │       │   No HTTP       │
+└────────┬────────┘       └────────┬────────┘       └────────┬────────┘
+         │                         │                          │
+         │   Redis Pub/Sub         │                          │
+         │   (real-time push)      │                          │
+         ├─────────────────────────┘                          │
+         │                                                    │
+         │   NATS JetStream                                   │
+         │   (async event processing)                         │
+         ├────────────────────────────────────────────────────┘
+         │
+    ┌────┴────┐   ┌─────────┐   ┌───────────────┐
+    │ Postgres│   │  Redis  │   │ Elasticsearch │
+    └─────────┘   └─────────┘   └───────────────┘
 ```
 
-## Chạy
+**API Server** — Handles REST requests, performs CRUD operations, and publishes domain events.
 
-Dự án có 3 server, chạy độc lập trên 3 terminal:
+**Socket Server** — Manages WebSocket connections. Subscribes to Redis Pub/Sub channels and pushes real-time updates to connected clients.
 
-```bash
-make run-api        # HTTP API         → localhost:8080
-make run-socket     # WebSocket server → localhost:8081
-make run-consumer   # NATS consumer    → không có HTTP, chỉ lắng nghe event
+**Consumer** — Listens to NATS JetStream events and dispatches them to specialized handlers (analytics, inventory, search indexing).
+
+### Request Processing Flow
+
+```
+HTTP Request → Handler → Service → Repository → PostgreSQL
+                           │
+                           ├──→ NATS Publish (domain event)
+                           └──→ Redis Publish (real-time notification)
 ```
 
-## Cấu trúc dự án
+Each layer has a single responsibility:
+
+| Layer          | Responsibility                          |
+| -------------- | --------------------------------------- |
+| **Handler**    | Input validation, HTTP response mapping |
+| **Service**    | Business logic, event publishing        |
+| **Repository** | Data access via sqlc-generated queries  |
+
+### Event Processing Flow
+
+```
+API Server ── NATS Publish ──→ JetStream ──→ Consumer ──→ Handler
+                                                          ├── AnalyticsHandler
+                                                          ├── InventoryHandler
+                                                          └── SearchIndexHandler (→ Elasticsearch)
+```
+
+## Tech Stack
+
+| Category       | Technology                                  |
+| -------------- | ------------------------------------------- |
+| Language       | Go 1.25                                     |
+| HTTP Framework | Gin                                         |
+| Database       | PostgreSQL 16                               |
+| Cache / PubSub | Redis 7                                     |
+| Search Engine  | Elasticsearch 8                             |
+| Event Stream   | NATS JetStream                              |
+| Real-time      | WebSocket (gorilla/websocket)               |
+| SQL Codegen    | [sqlc](https://sqlc.dev/)                   |
+| Migrations     | [golang-migrate](https://github.com/golang-migrate/migrate) |
+| API Docs       | Swagger (swaggo)                            |
+| Logging        | slog + Logstash (ELK)                       |
+| Deployment     | Docker, Kubernetes (kustomize)              |
+
+## Project Structure
 
 ```
 retail-store-api/
+├── cmd/                             # Application entry points
+│   ├── api/main.go                  # REST API server
+│   ├── socket/main.go               # WebSocket server
+│   └── consumer/main.go             # NATS event consumer
 │
-├── cmd/                          # Entry point cho từng server
-│   ├── api/main.go               # HTTP API server
-│   ├── socket/main.go            # WebSocket server
-│   └── consumer/main.go          # NATS consumer
+├── internal/                        # Private application code
+│   ├── app/                         # Server bootstrap & dependency wiring
+│   │   ├── api/                     # API server init + route registration
+│   │   ├── socket/                  # Socket server init
+│   │   └── consumer/                # Consumer init + handler registration
+│   ├── config/                      # Environment-based configuration
+│   ├── handler/                     # HTTP handlers
+│   ├── service/                     # Business logic
+│   ├── repository/                  # Data access layer
+│   ├── model/
+│   │   ├── request/                 # Request DTOs
+│   │   └── response/                # Response DTOs
+│   └── consumer/
+│       └── handler/                 # Event handlers (analytics, inventory, search)
 │
-├── db/                           # Database
-│   ├── migration/                # SQL migration files (up/down)
-│   ├── query/                    # SQL queries cho sqlc
-│   └── sqlc/                     # Code được generate tự động (KHÔNG sửa tay)
+├── pkg/                             # Reusable packages
+│   ├── database/                    # PostgreSQL & Redis connection helpers
+│   ├── middleware/                   # HTTP middleware (logging, recovery)
+│   ├── nats/                        # NATS client, publisher, stream config
+│   ├── notification/                # WebSocket hub, Redis Pub/Sub bridge
+│   ├── response/                    # Standardized HTTP response helpers
+│   ├── logger/                      # Structured logging with Logstash support
+│   └── elasticsearch/               # Elasticsearch client & indexing
 │
-├── internal/                     # Code nội bộ (không export ra ngoài)
-│   ├── app/                      # Khởi tạo từng server
-│   │   ├── api/                  # API server: kết nối DB, Redis, setup router
-│   │   ├── socket/               # Socket server: kết nối Redis, setup WebSocket
-│   │   └── consumer/             # Consumer: kết nối NATS, đăng ký handler
-│   │
-│   ├── config/                   # Đọc biến môi trường từ .env
-│   │
-│   ├── handler/                  # Xử lý HTTP request (validate input, trả response)
-│   ├── service/                  # Business logic (xử lý nghiệp vụ)
-│   ├── repository/               # Truy vấn database (gọi sqlc)
-│   │
-│   ├── model/                    # Định nghĩa struct
-│   │   ├── request/              # Struct cho request body (CreateProductRequest, ...)
-│   │   └── response/             # Struct cho response data (ProductResponse, ...)
-│   │
-│   └── consumer/                 # Consumer engine + handler xử lý event
-│       └── handler/              # Từng handler: analytics, inventory, ...
+├── db/
+│   ├── migration/                   # SQL migration files (up/down)
+│   ├── query/                       # SQL queries for sqlc
+│   └── sqlc/                        # Auto-generated Go code (do not edit)
 │
-├── pkg/                          # Code dùng chung (copy sang project khác được)
-│   ├── database/                 # Helper kết nối DB (PostgreSQL, Redis)
-│   ├── middleware/               # Gin middleware (logger, ...)
-│   ├── nats/                     # NATS connection, publisher, subjects, stream
-│   ├── notification/             # WebSocket hub, Redis Pub/Sub subscriber
-│   └── response/                 # Helper: Success(), Error()
+├── deploy/
+│   ├── k8s/                         # Kubernetes manifests
+│   │   ├── base/                    # Base resources
+│   │   └── overlays/                # Environment-specific overrides (dev/prod)
+│   ├── logstash/                    # Logstash pipeline config
+│   └── kibana/                      # Kibana dashboards
 │
-├── .env.example                  # Mẫu biến môi trường
-├── Makefile                      # Lệnh tắt
-└── sqlc.yaml                     # Cấu hình sqlc
+├── docker-compose.yml               # Local development stack
+├── Dockerfile                       # Multi-stage build
+├── Makefile                         # Development commands
+└── sqlc.yaml                        # sqlc configuration
 ```
 
-## Kiến trúc
+## Getting Started
 
-### Tổng quan
+### Prerequisites
 
-Dự án gồm **3 server chạy độc lập**, giao tiếp với nhau qua **Redis** và **NATS**:
+- Go 1.25+
+- Docker & Docker Compose
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  API Server │     │Socket Server│     │  Consumer   │
-│   :8080     │     │   :8081     │     │  (no HTTP)  │
-└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
-       │                   │                   │
-       │    ┌──────────────┘                   │
-       │    │  Redis Pub/Sub                   │
-       │    │  (realtime notification)         │
-       │    │                                  │
-       ▼    ▼                                  │
-   ┌──────────┐                                │
-   │  Redis   │                                │
-   └──────────┘                                │
-       │                                       │
-       │         NATS JetStream                │
-       │         (event processing)            │
-       │                                       │
-       ▼                                       ▼
-   ┌──────────┐                         ┌──────────────┐
-   │   NATS   │ ──────────────────────▶ │   Handlers   │
-   └──────────┘                         │ - analytics  │
-       │                                │ - inventory  │
-       ▼                                └──────────────┘
-   ┌──────────┐
-   │ Postgres │
-   └──────────┘
+### Quick Start
+
+```bash
+# Clone the repository
+git clone <repo-url>
+cd retail-store-api
+
+# Copy and configure environment variables
+cp .env.example .env
+
+# Start infrastructure services (PostgreSQL, Redis, NATS, Elasticsearch)
+make docker-up
+
+# Run database migrations
+make migrate-up
+
+# Start all services (run each in a separate terminal)
+make run-api          # REST API         → http://localhost:8080
+make run-socket       # WebSocket server → ws://localhost:8081
+make run-consumer     # Event consumer   → listens on NATS JetStream
 ```
 
-### Flow xử lý request (API Server)
+### Using Docker
 
-```
-Request → Handler → Service → Repository → DB (sqlc)
-                      │
-                      └──→ NATS Publish (nếu cần gửi event)
-```
-
-Mỗi layer có nhiệm vụ riêng:
-
-| Layer | Nhiệm vụ | Ví dụ |
-|---|---|---|
-| **Handler** | Validate input, trả response | Kiểm tra `name` không rỗng |
-| **Service** | Xử lý business logic | Tính giá sau giảm, check tồn kho |
-| **Repository** | Gọi database | Gọi sqlc query |
-
-### Flow WebSocket (Socket Server)
-
-```
-Client ──WebSocket──▶ Socket Server
-                          │
-Redis PUBLISH ──────▶ Subscriber ──▶ Hub ──▶ Broadcast tới tất cả clients
-```
-
-### Flow Event (Consumer)
-
-```
-API Server ──NATS Publish──▶ NATS JetStream ──▶ Consumer ──▶ Handler
-                                                              │
-                                                    ┌─────────┼──────────┐
-                                                    ▼         ▼          ▼
-                                               Analytics  Inventory    ...
+```bash
+# Build and run the entire stack
+make docker-build
+docker compose up
 ```
 
 ## API Endpoints
 
-### Health
+### Health Check
+
 ```
-GET /health
+GET  /health
 ```
 
 ### Categories
+
 ```
 POST   /api/v1/categories
 GET    /api/v1/categories
@@ -177,6 +180,7 @@ DELETE /api/v1/categories/:id
 ```
 
 ### Products
+
 ```
 POST   /api/v1/products
 GET    /api/v1/products?limit=20&offset=0
@@ -185,70 +189,82 @@ PUT    /api/v1/products/:id
 DELETE /api/v1/products/:id
 ```
 
+### Search
+
+```
+GET  /api/v1/search/products?q=keyword&limit=20&offset=0
+```
+
 ### WebSocket
+
 ```
-ws://localhost:8081/api/v1/ws/notifications
+WS   ws://localhost:8081/api/v1/ws/notifications
 ```
 
-## Swagger
+### API Documentation
 
-Swagger UI có sẵn tại `http://localhost:8080/swagger/index.html` khi chạy API server.
-
-Sau khi thêm/sửa swagger annotations, chạy lại:
+Swagger UI is available at `http://localhost:8080/swagger/index.html` when the API server is running.
 
 ```bash
+# Regenerate Swagger docs after modifying annotations
 make swagger
 ```
 
-### Snippets
+## Development
 
-Trong Cursor/VSCode, gõ prefix rồi nhấn **Tab** để sinh swagger annotation block:
+### Available Commands
 
-| Prefix | Sinh ra |
-|---|---|
-| `swag-get` | GET endpoint (với path param) |
-| `swag-list` | GET list (có sẵn limit/offset) |
-| `swag-post` | POST endpoint (có body) |
-| `swag-put` | PUT endpoint (có id + body) |
-| `swag-del` | DELETE endpoint (có id) |
+| Command              | Description                              |
+| -------------------- | ---------------------------------------- |
+| `make run-api`       | Start the API server                     |
+| `make run-socket`    | Start the WebSocket server               |
+| `make run-consumer`  | Start the NATS consumer                  |
+| `make build`         | Build all binaries to `bin/`             |
+| `make sqlc`          | Generate Go code from SQL queries        |
+| `make swagger`       | Generate Swagger documentation           |
+| `make migrate-up`    | Apply database migrations                |
+| `make migrate-down`  | Rollback database migrations             |
+| `make docker-up`     | Start infrastructure via Docker Compose  |
+| `make docker-build`  | Build Docker images                      |
+| `make k8s-dev`       | Deploy to Kubernetes (dev overlay)       |
 
-## Thêm tính năng mới
+### Adding a New API Endpoint
 
-### Thêm API endpoint mới
+1. Define request/response structs in `internal/model/`
+2. Add SQL queries in `db/query/` and run `make sqlc`
+3. Implement repository in `internal/repository/`
+4. Implement service in `internal/service/`
+5. Implement handler in `internal/handler/`
+6. Register routes in `internal/app/api/router.go`
+7. Run `make swagger` to update API docs
 
-1. Tạo request/response struct trong `internal/model/request/` và `internal/model/response/`
-2. Tạo repository trong `internal/repository/`
-3. Tạo service trong `internal/service/`
-4. Tạo handler trong `internal/handler/`, dùng snippet `swag-*` để thêm swagger annotations
-5. Đăng ký handler trong `internal/app/api/router.go`
-6. Chạy `make swagger` để cập nhật docs
+### Adding a New Event Handler
 
-### Thêm consumer handler mới
+1. Define the subject in `pkg/nats/subjects.go`
+2. Implement the handler in `internal/consumer/handler/`
+3. Register it in `internal/app/consumer/consumer.go`
 
-1. Thêm subject mới trong `pkg/nats/subjects.go`
-2. Tạo handler trong `internal/consumer/handler/`
-3. Đăng ký trong `internal/app/consumer/consumer.go`
+### Database Changes
 
-### Thêm SQL query mới
+```bash
+# Create migration files
+# db/migration/000002_<name>.up.sql
+# db/migration/000002_<name>.down.sql
 
-1. Viết query trong `db/query/`
-2. Chạy `make sqlc` để generate code
-3. Dùng trong repository
+# Apply
+make migrate-up
+```
 
-### Thêm migration mới
+## Deployment
 
-1. Tạo file `db/migration/000002_<tên>.up.sql` và `.down.sql`
-2. Chạy `make migrate-up`
+The project supports deployment via **Docker Compose** for local/staging environments and **Kubernetes** with kustomize overlays for production.
 
-## Makefile
+```bash
+# Kubernetes (dev)
+make k8s-dev
 
-| Lệnh | Mô tả |
-|---|---|
-| `make run-api` | Chạy API server |
-| `make run-socket` | Chạy WebSocket server |
-| `make run-consumer` | Chạy NATS consumer |
-| `make build` | Build tất cả ra thư mục `bin/` |
-| `make sqlc` | Generate Go code từ SQL |
-| `make swagger` | Generate swagger docs |
-| `make migrate-up` | Chạy migration |
-| `make migrate-down` | Rollback migration |
+# Kubernetes (prod) — apply production overlay
+kubectl apply -k deploy/k8s/overlays/prod
+```
+
+Logging is handled through the **ELK stack** (Elasticsearch, Logstash, Kibana) with structured log output via Go's `slog` package.
