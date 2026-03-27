@@ -7,7 +7,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 
-	appnats "github.com/kainguyen/retail-store-api/pkg/nats"
+	pkgNats "github.com/hoangquan/retail-store-api/pkg/nats"
 )
 
 type HandlerFunc func(msg jetstream.Msg)
@@ -32,13 +32,13 @@ func (c *Consumer) Register(sub Subscription) {
 }
 
 func (c *Consumer) Start(ctx context.Context) error {
-	_, err := appnats.EnsureStream(ctx, c.js)
+	_, err := pkgNats.EnsureStream(ctx, c.js)
 	if err != nil {
 		return err
 	}
 
 	for _, sub := range c.subscriptions {
-		cons, err := c.js.CreateOrUpdateConsumer(ctx, appnats.StreamRetailStore, jetstream.ConsumerConfig{
+		cons, err := c.js.CreateOrUpdateConsumer(ctx, pkgNats.StreamRetailStore, jetstream.ConsumerConfig{
 			Durable:       sub.ConsumerName,
 			FilterSubject: sub.Subject,
 			AckPolicy:     jetstream.AckExplicitPolicy,

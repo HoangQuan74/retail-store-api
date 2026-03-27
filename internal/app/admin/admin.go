@@ -1,4 +1,4 @@
-package api
+package admin
 
 import (
 	"context"
@@ -105,7 +105,7 @@ func New() (*App, error) {
 		rdb:  rdb,
 		nc:   nc,
 		server: &http.Server{
-			Addr:    ":" + cfg.App.Port,
+			Addr:    ":" + cfg.Admin.Port,
 			Handler: NewRouter(appCtx),
 		},
 	}, nil
@@ -118,9 +118,9 @@ func (a *App) Start() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		slog.Info("API server starting", "port", a.cfg.App.Port)
+		slog.Info("Admin server starting", "port", a.cfg.Admin.Port)
 		if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("API server failed", "error", err)
+			slog.Error("Admin server failed", "error", err)
 			errCh <- err
 		}
 	}()
@@ -137,7 +137,7 @@ func (a *App) Start() error {
 }
 
 func (a *App) Shutdown() error {
-	slog.Info("Shutting down API server...")
+	slog.Info("Shutting down Admin server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return a.server.Shutdown(ctx)

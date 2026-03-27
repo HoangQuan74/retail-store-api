@@ -1,11 +1,8 @@
-package api
+package admin
 
 import (
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/hoangquan/retail-store-api/docs"
 	"github.com/hoangquan/retail-store-api/internal/app"
 	"github.com/hoangquan/retail-store-api/internal/handler"
 	"github.com/hoangquan/retail-store-api/internal/service"
@@ -18,34 +15,42 @@ func NewRouter(ctx *app.AppContext) *gin.Engine {
 	router.Use(middleware.Logger())
 
 	router.GET("/health", handler.HealthCheck)
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Auth endpoints (public)
 	authService := service.NewAuthService(ctx.Queries, ctx.JWTManager)
 	authHandler := handler.NewAuthHandler(authService)
-	auth := router.Group("/api/v1/auth")
+	authGroup := router.Group("/api/v1/auth")
 	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
+		authGroup.POST("/login", authHandler.Login)
 	}
 
-	// Public read-only endpoints
+	// Admin-only endpoints (require JWT + admin role)
+	admin := router.Group("/api/v1")
+	admin.Use(middleware.Auth(ctx.JWTManager))
+	admin.Use(middleware.RequireRole("admin"))
+
 	productHandler := handler.NewProductHandler(ctx)
-	products := router.Group("/api/v1/products")
+	products := admin.Group("/products")
 	{
+		products.POST("", productHandler.Create)
 		products.GET("", productHandler.List)
 		products.GET("/:id", productHandler.GetByID)
+		products.PUT("/:id", productHandler.Update)
+		products.DELETE("/:id", productHandler.Delete)
 	}
 
 	categoryHandler := handler.NewCategoryHandler(ctx)
-	categories := router.Group("/api/v1/categories")
+	categories := admin.Group("/categories")
 	{
+		categories.POST("", categoryHandler.Create)
 		categories.GET("", categoryHandler.List)
 		categories.GET("/:id", categoryHandler.GetByID)
+		categories.PUT("/:id", categoryHandler.Update)
+		categories.DELETE("/:id", categoryHandler.Delete)
 	}
 
 	searchHandler := handler.NewSearchHandler(ctx)
-	router.GET("/api/v1/search/products", searchHandler.SearchProducts)
+	admin.GET("/search/products", searchHandler.SearchProducts)
 
 	return router
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/kainguyen/retail-store-api/internal/app/socket"
+	"github.com/hoangquan/retail-store-api/internal/app/socket"
 )
 
 func main() {

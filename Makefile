@@ -2,6 +2,9 @@
 run-api:
 	go run cmd/api/main.go
 
+run-admin:
+	go run cmd/admin/main.go
+
 run-socket:
 	go run cmd/socket/main.go
 
@@ -10,6 +13,7 @@ run-consumer:
 
 build:
 	go build -o bin/api cmd/api/main.go
+	go build -o bin/admin cmd/admin/main.go
 	go build -o bin/socket cmd/socket/main.go
 	go build -o bin/consumer cmd/consumer/main.go
 
@@ -34,6 +38,7 @@ docker-down:
 
 docker-build:
 	docker build --build-arg SERVICE=api -t retail-store-api:latest .
+	docker build --build-arg SERVICE=admin -t retail-store-admin:latest .
 	docker build --build-arg SERVICE=socket -t retail-store-socket:latest .
 	docker build --build-arg SERVICE=consumer -t retail-store-consumer:latest .
 
@@ -53,6 +58,6 @@ k8s-delete-dev:
 k8s-delete-prod:
 	kubectl delete -k deploy/k8s/overlays/prod
 
-.PHONY: run-api run-socket run-consumer build sqlc swagger migrate-up migrate-down \
+.PHONY: run-api run-admin run-socket run-consumer build sqlc swagger migrate-up migrate-down \
 	docker-up docker-down docker-build docker-infra \
 	k8s-dev k8s-prod k8s-delete-dev k8s-delete-prod

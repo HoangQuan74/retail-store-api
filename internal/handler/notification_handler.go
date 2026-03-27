@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/kainguyen/retail-store-api/internal/app"
-	"github.com/kainguyen/retail-store-api/pkg/notification"
+	"github.com/hoangquan/retail-store-api/internal/app"
+	"github.com/hoangquan/retail-store-api/pkg/notification"
 )
 
 var upgrader = websocket.Upgrader{

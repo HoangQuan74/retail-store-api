@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
+	pkgResponse "github.com/hoangquan/retail-store-api/pkg/response"
 )
 
 // @Summary	Health check

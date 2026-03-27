@@ -9,12 +9,12 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"github.com/kainguyen/retail-store-api/internal/config"
-	appConsumer "github.com/kainguyen/retail-store-api/internal/consumer"
-	"github.com/kainguyen/retail-store-api/internal/consumer/handler"
-	es "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
-	"github.com/kainguyen/retail-store-api/pkg/logger"
-	appnats "github.com/kainguyen/retail-store-api/pkg/nats"
+	"github.com/hoangquan/retail-store-api/internal/config"
+	appConsumer "github.com/hoangquan/retail-store-api/internal/consumer"
+	"github.com/hoangquan/retail-store-api/internal/consumer/handler"
+	es "github.com/hoangquan/retail-store-api/pkg/elasticsearch"
+	"github.com/hoangquan/retail-store-api/pkg/logger"
+	pkgNats "github.com/hoangquan/retail-store-api/pkg/nats"
 )
 
 type App struct {
@@ -25,23 +25,27 @@ type App struct {
 func New() (*App, error) {
 	cfg, err := config.Load()
 	if err != nil {
+		slog.Error("Failed to load config", "error", err)
 		return nil, err
 	}
 
 	logger.New(cfg.Log)
 
-	nc, err := appnats.Connect(cfg.NATS)
+	nc, err := pkgNats.Connect(cfg.NATS)
 	if err != nil {
+		slog.Error("Failed to connect to NATS", "error", err)
 		return nil, err
 	}
 
-	js, err := appnats.NewJetStream(nc)
+	js, err := pkgNats.NewJetStream(nc)
 	if err != nil {
+		slog.Error("Failed to create JetStream", "error", err)
 		return nil, err
 	}
 
 	esClient, err := es.NewClient(cfg.Elasticsearch)
 	if err != nil {
+		slog.Error("Failed to connect to Elasticsearch", "error", err)
 		return nil, err
 	}
 
@@ -53,32 +57,32 @@ func New() (*App, error) {
 	searchIndexHandler := handler.NewSearchIndexHandler(esClient, cfg.Elasticsearch.ProductIndex)
 
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectOrderCreated,
+		Subject:      pkgNats.SubjectOrderCreated,
 		ConsumerName: "analytics-order-created",
 		Handler:      analyticsHandler.HandleOrderCreated,
 	})
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectProductViewed,
+		Subject:      pkgNats.SubjectProductViewed,
 		ConsumerName: "analytics-product-viewed",
 		Handler:      analyticsHandler.HandleProductViewed,
 	})
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectOrderCreated,
+		Subject:      pkgNats.SubjectOrderCreated,
 		ConsumerName: "inventory-order-created",
 		Handler:      inventoryHandler.HandleOrderCreated,
 	})
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectProductCreated,
+		Subject:      pkgNats.SubjectProductCreated,
 		ConsumerName: "search-product-created",
 		Handler:      searchIndexHandler.HandleProductCreated,
 	})
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectProductUpdated,
+		Subject:      pkgNats.SubjectProductUpdated,
 		ConsumerName: "search-product-updated",
 		Handler:      searchIndexHandler.HandleProductUpdated,
 	})
 	c.Register(appConsumer.Subscription{
-		Subject:      appnats.SubjectProductDeleted,
+		Subject:      pkgNats.SubjectProductDeleted,
 		ConsumerName: "search-product-deleted",
 		Handler:      searchIndexHandler.HandleProductDeleted,
 	})

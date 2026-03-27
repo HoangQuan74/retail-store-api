@@ -5,18 +5,30 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
 	App           AppConfig
+	Admin         AdminConfig
 	Socket        SocketConfig
 	DB            DBConfig
 	Redis         RedisConfig
 	NATS          NATSConfig
 	Elasticsearch ElasticsearchConfig
 	Log           LogConfig
+	JWT           JWTConfig
+}
+
+type JWTConfig struct {
+	Secret     string
+	Expiration time.Duration
+}
+
+type AdminConfig struct {
+	Port string
 }
 
 type ElasticsearchConfig struct {
@@ -71,11 +83,15 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
+	jwtExpHours, _ := strconv.Atoi(getEnv("JWT_EXPIRATION_HOURS", "24"))
 
 	return &Config{
 		App: AppConfig{
 			Port: getEnv("APP_PORT", "8080"),
 			Env:  getEnv("APP_ENV", "development"),
+		},
+		Admin: AdminConfig{
+			Port: getEnv("ADMIN_PORT", "8082"),
 		},
 		Socket: SocketConfig{
 			Port: getEnv("SOCKET_PORT", "8081"),
@@ -106,6 +122,10 @@ func Load() (*Config, error) {
 			Port:     getEnv("REDIS_PORT", "6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 			DB:       redisDB,
+		},
+		JWT: JWTConfig{
+			Secret:     getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
+			Expiration: time.Duration(jwtExpHours) * time.Hour,
 		},
 	}, nil
 }

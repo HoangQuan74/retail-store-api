@@ -5,27 +5,18 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kainguyen/retail-store-api/internal/app"
-	"github.com/kainguyen/retail-store-api/internal/model/request"
-	"github.com/kainguyen/retail-store-api/internal/service"
-	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
+	"github.com/hoangquan/retail-store-api/internal/app"
+	"github.com/hoangquan/retail-store-api/internal/model/request"
+	"github.com/hoangquan/retail-store-api/internal/service"
+	pkgResponse "github.com/hoangquan/retail-store-api/pkg/response"
 )
 
 type ProductHandler struct {
 	service *service.ProductService
 }
 
-func NewProductHandler(ctx *app.AppContext, router *gin.Engine) *ProductHandler {
-	h := &ProductHandler{service: service.NewProductService(ctx.Queries, ctx.Publisher)}
-	products := router.Group("/api/v1/products")
-	{
-		products.POST("", h.Create)
-		products.GET("", h.List)
-		products.GET("/:id", h.GetByID)
-		products.PUT("/:id", h.Update)
-		products.DELETE("/:id", h.Delete)
-	}
-	return h
+func NewProductHandler(ctx *app.AppContext) *ProductHandler {
+	return &ProductHandler{service: service.NewProductService(ctx.Queries, ctx.Publisher)}
 }
 
 // @Summary	Create a product

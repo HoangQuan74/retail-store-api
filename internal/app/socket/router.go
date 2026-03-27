@@ -2,8 +2,8 @@ package socket
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kainguyen/retail-store-api/internal/app"
-	"github.com/kainguyen/retail-store-api/internal/handler"
+	"github.com/hoangquan/retail-store-api/internal/app"
+	"github.com/hoangquan/retail-store-api/internal/handler"
 )
 
 func NewRouter(ctx *app.AppContext) *gin.Engine {

@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	es "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
-	"github.com/kainguyen/retail-store-api/internal/repository"
+	es "github.com/hoangquan/retail-store-api/pkg/elasticsearch"
+	"github.com/hoangquan/retail-store-api/internal/repository"
 )
 
 type SearchService struct {

@@ -16,6 +16,22 @@ services:
       - elasticsearch
     restart: unless-stopped
 
+  admin:
+    build:
+      context: .
+      args:
+        SERVICE: admin
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres
+      - redis
+      - nats
+      - elasticsearch
+    restart: unless-stopped
+
   socket:
     build:
       context: .

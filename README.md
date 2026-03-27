@@ -1,270 +1,180 @@
 # Retail Store API
 
-A microservices-oriented backend system for retail store management, built with Go. The system is designed around an **event-driven architecture** with three independently deployable services communicating via NATS JetStream and Redis Pub/Sub.
+A microservices-oriented backend system for retail store management, built with **Go**. Designed around an **event-driven architecture** with four independently deployable services.
 
-## Architecture Overview
-
-```
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│   API Server    │       │  Socket Server  │       │    Consumer     │
-│    (REST)       │       │  (WebSocket)    │       │ (Event Handler) │
-│   :8080         │       │   :8081         │       │   No HTTP       │
-└────────┬────────┘       └────────┬────────┘       └────────┬────────┘
-         │                         │                          │
-         │   Redis Pub/Sub         │                          │
-         │   (real-time push)      │                          │
-         ├─────────────────────────┘                          │
-         │                                                    │
-         │   NATS JetStream                                   │
-         │   (async event processing)                         │
-         ├────────────────────────────────────────────────────┘
-         │
-    ┌────┴────┐   ┌─────────┐   ┌───────────────┐
-    │ Postgres│   │  Redis  │   │ Elasticsearch │
-    └─────────┘   └─────────┘   └───────────────┘
-```
-
-**API Server** — Handles REST requests, performs CRUD operations, and publishes domain events.
-
-**Socket Server** — Manages WebSocket connections. Subscribes to Redis Pub/Sub channels and pushes real-time updates to connected clients.
-
-**Consumer** — Listens to NATS JetStream events and dispatches them to specialized handlers (analytics, inventory, search indexing).
-
-### Request Processing Flow
+## Architecture
 
 ```
-HTTP Request → Handler → Service → Repository → PostgreSQL
-                           │
-                           ├──→ NATS Publish (domain event)
-                           └──→ Redis Publish (real-time notification)
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   API Server    │  │  Admin Server   │  │  Socket Server  │  │    Consumer     │
+│   (Public)      │  │  (Admin Only)   │  │  (WebSocket)    │  │ (Event Handler) │
+│   :8080         │  │   :8082         │  │   :8081         │  │   No HTTP       │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                     │                     │
+         │   Redis Pub/Sub ───┼─────────────────────┘                     │
+         │   NATS JetStream ──┼───────────────────────────────────────────┘
+         │                    │
+    ┌────┴────┐  ┌─────────┐  ┌────┴────┐  ┌───────────────┐
+    │Postgres │  │  Redis  │  │  NATS   │  │ Elasticsearch │
+    └─────────┘  └─────────┘  └─────────┘  └───────────────┘
 ```
 
-Each layer has a single responsibility:
-
-| Layer          | Responsibility                          |
-| -------------- | --------------------------------------- |
-| **Handler**    | Input validation, HTTP response mapping |
-| **Service**    | Business logic, event publishing        |
-| **Repository** | Data access via sqlc-generated queries  |
-
-### Event Processing Flow
-
-```
-API Server ── NATS Publish ──→ JetStream ──→ Consumer ──→ Handler
-                                                          ├── AnalyticsHandler
-                                                          ├── InventoryHandler
-                                                          └── SearchIndexHandler (→ Elasticsearch)
-```
+| Service          | Port | Description                                                    |
+| ---------------- | ---- | -------------------------------------------------------------- |
+| **API Server**   | 8080 | Public REST API — read-only endpoints, authentication, search  |
+| **Admin Server** | 8082 | Admin REST API — full CRUD, requires JWT with `admin` role     |
+| **Socket Server**| 8081 | WebSocket — real-time notifications via Redis Pub/Sub          |
+| **Consumer**     | —    | NATS JetStream listener — analytics, inventory, search indexing|
 
 ## Tech Stack
 
-| Category       | Technology                                  |
-| -------------- | ------------------------------------------- |
-| Language       | Go 1.25                                     |
-| HTTP Framework | Gin                                         |
-| Database       | PostgreSQL 16                               |
-| Cache / PubSub | Redis 7                                     |
-| Search Engine  | Elasticsearch 8                             |
-| Event Stream   | NATS JetStream                              |
-| Real-time      | WebSocket (gorilla/websocket)               |
-| SQL Codegen    | [sqlc](https://sqlc.dev/)                   |
-| Migrations     | [golang-migrate](https://github.com/golang-migrate/migrate) |
-| API Docs       | Swagger (swaggo)                            |
-| Logging        | slog + Logstash (ELK)                       |
-| Deployment     | Docker, Kubernetes (kustomize)              |
+| Category        | Technology                                                   |
+| --------------- | ------------------------------------------------------------ |
+| Language        | Go 1.25                                                      |
+| HTTP Framework  | Gin                                                          |
+| Database        | PostgreSQL 16                                                |
+| Cache / PubSub  | Redis 7                                                      |
+| Search Engine   | Elasticsearch 8                                              |
+| Event Stream    | NATS JetStream                                               |
+| Real-time       | WebSocket (gorilla/websocket)                                |
+| Authentication  | JWT (golang-jwt) + bcrypt                                    |
+| Code Generation | [sqlc](https://sqlc.dev/)                                    |
+| Migrations      | [golang-migrate](https://github.com/golang-migrate/migrate) |
+| API Docs        | Swagger (swaggo)                                             |
+| Logging         | slog + ELK Stack (Logstash, Kibana)                          |
+| Deployment      | Docker, Kubernetes (kustomize)                               |
 
-## Project Structure
+## Functional Requirements
 
-```
-retail-store-api/
-├── cmd/                             # Application entry points
-│   ├── api/main.go                  # REST API server
-│   ├── socket/main.go               # WebSocket server
-│   └── consumer/main.go             # NATS event consumer
-│
-├── internal/                        # Private application code
-│   ├── app/                         # Server bootstrap & dependency wiring
-│   │   ├── api/                     # API server init + route registration
-│   │   ├── socket/                  # Socket server init
-│   │   └── consumer/                # Consumer init + handler registration
-│   ├── config/                      # Environment-based configuration
-│   ├── handler/                     # HTTP handlers
-│   ├── service/                     # Business logic
-│   ├── repository/                  # Data access layer
-│   ├── model/
-│   │   ├── request/                 # Request DTOs
-│   │   └── response/                # Response DTOs
-│   └── consumer/
-│       └── handler/                 # Event handlers (analytics, inventory, search)
-│
-├── pkg/                             # Reusable packages
-│   ├── database/                    # PostgreSQL & Redis connection helpers
-│   ├── middleware/                   # HTTP middleware (logging, recovery)
-│   ├── nats/                        # NATS client, publisher, stream config
-│   ├── notification/                # WebSocket hub, Redis Pub/Sub bridge
-│   ├── response/                    # Standardized HTTP response helpers
-│   ├── logger/                      # Structured logging with Logstash support
-│   └── elasticsearch/               # Elasticsearch client & indexing
-│
-├── db/
-│   ├── migration/                   # SQL migration files (up/down)
-│   ├── query/                       # SQL queries for sqlc
-│   └── sqlc/                        # Auto-generated Go code (do not edit)
-│
-├── deploy/
-│   ├── k8s/                         # Kubernetes manifests
-│   │   ├── base/                    # Base resources
-│   │   └── overlays/                # Environment-specific overrides (dev/prod)
-│   ├── logstash/                    # Logstash pipeline config
-│   └── kibana/                      # Kibana dashboards
-│
-├── docker-compose.yml               # Local development stack
-├── Dockerfile                       # Multi-stage build
-├── Makefile                         # Development commands
-└── sqlc.yaml                        # sqlc configuration
-```
+### Authentication & Authorization
 
-## Getting Started
+- User registration with email, password (bcrypt hashed), and name
+- JWT-based login with configurable token expiration
+- Role-based access control: `user` (read-only) and `admin` (full CRUD)
+- Bearer token validation middleware with role checking
 
-### Prerequisites
+### Product Management
 
-- Go 1.25+
-- Docker & Docker Compose
+- **Create** / **Update** / **Delete** — Admin only, publishes domain events to NATS
+- **List** (paginated) / **Get by ID** — Public, no authentication required
+- Full-text search via Elasticsearch with fuzzy matching and weighted relevance (name 3x)
+- Search index automatically maintained by consumer on create/update/delete events
 
-### Quick Start
+### Category Management
 
-```bash
-# Clone the repository
-git clone <repo-url>
-cd retail-store-api
+- **Create** / **Update** / **Delete** — Admin only
+- **List** / **Get by ID** — Public
+- Products linked via foreign key (ON DELETE SET NULL)
 
-# Copy and configure environment variables
-cp .env.example .env
+### Real-time Notifications
 
-# Start infrastructure services (PostgreSQL, Redis, NATS, Elasticsearch)
-make docker-up
+- WebSocket connections managed by Socket Server
+- Redis Pub/Sub bridges events to all connected clients
+- Supports promotion and discount notification channels
 
-# Run database migrations
-make migrate-up
+### Event Processing (Consumer)
 
-# Start all services (run each in a separate terminal)
-make run-api          # REST API         → http://localhost:8080
-make run-socket       # WebSocket server → ws://localhost:8081
-make run-consumer     # Event consumer   → listens on NATS JetStream
-```
+- **Analytics** — Tracks order creation and product views
+- **Inventory** — Updates stock on order events
+- **Search Indexing** — Syncs product data to Elasticsearch
 
-### Using Docker
+## Non-Functional Requirements
 
-```bash
-# Build and run the entire stack
-make docker-build
-docker compose up
-```
+### Performance & Scalability
+
+- Horizontal scaling via Kubernetes replicas (API/Admin: 2, Socket/Consumer: 1)
+- PostgreSQL connection pooling (pgx)
+- Pagination on all list endpoints (limit 1–100, offset)
+- Database indexes on frequently queried columns (category_id, name, email)
+
+### Reliability
+
+- Graceful shutdown with 5-second timeout for in-flight requests
+- NATS JetStream with explicit ACK — messages redelivered on failure
+- Event publishing failures logged but don't block API responses
+- Health check endpoint (`GET /health`) for Kubernetes liveness/readiness probes
+
+### Security
+
+- Passwords hashed with bcrypt (default cost)
+- JWT HS256 signing with configurable secret
+- Admin endpoints isolated on separate server (port 8082)
+- No sensitive data in logs or error responses
+
+### Observability
+
+- Structured JSON logging via Go slog
+- Request logging: method, path, status, latency, client IP
+- ELK stack integration: Logstash (TCP 5044), Elasticsearch, Kibana (port 5601)
+- Error logging with context on all initialization failures
+
+### Deployment
+
+- Multi-stage Docker build (golang:1.24-alpine → alpine:3.19)
+- Docker Compose for local development (all services + infrastructure)
+- Kubernetes with kustomize overlays (dev/prod)
+- Resource limits: CPU 100–500m, Memory 128–256Mi per service
+- Liveness/readiness probes with configurable intervals
 
 ## API Endpoints
 
-### Health Check
+### Public API (:8080)
 
 ```
-GET  /health
+POST /api/v1/auth/register                          # Register
+POST /api/v1/auth/login                             # Login → JWT token
+GET  /api/v1/products?limit=20&offset=0             # List products
+GET  /api/v1/products/:id                           # Get product
+GET  /api/v1/categories                             # List categories
+GET  /api/v1/categories/:id                         # Get category
+GET  /api/v1/search/products?q=keyword              # Full-text search
+GET  /health                                        # Health check
 ```
 
-### Categories
+### Admin API (:8082) — `Authorization: Bearer <token>` required
 
 ```
-POST   /api/v1/categories
-GET    /api/v1/categories
-GET    /api/v1/categories/:id
-PUT    /api/v1/categories/:id
-DELETE /api/v1/categories/:id
+POST   /api/v1/products                             # Create product
+PUT    /api/v1/products/:id                         # Update product
+DELETE /api/v1/products/:id                         # Delete product
+POST   /api/v1/categories                           # Create category
+PUT    /api/v1/categories/:id                       # Update category
+DELETE /api/v1/categories/:id                       # Delete category
+GET    /api/v1/products | /categories | /search     # Also available
 ```
 
-### Products
+### WebSocket (:8081)
 
 ```
-POST   /api/v1/products
-GET    /api/v1/products?limit=20&offset=0
-GET    /api/v1/products/:id
-PUT    /api/v1/products/:id
-DELETE /api/v1/products/:id
+WS ws://localhost:8081/api/v1/ws/notifications      # Real-time updates
 ```
 
-### Search
+Swagger UI: `http://localhost:8080/swagger/index.html`
 
-```
-GET  /api/v1/search/products?q=keyword&limit=20&offset=0
-```
-
-### WebSocket
-
-```
-WS   ws://localhost:8081/api/v1/ws/notifications
-```
-
-### API Documentation
-
-Swagger UI is available at `http://localhost:8080/swagger/index.html` when the API server is running.
+## Quick Start
 
 ```bash
-# Regenerate Swagger docs after modifying annotations
-make swagger
+cp .env.example .env
+make docker-infra                   # Start PostgreSQL, Redis, NATS, Elasticsearch
+make migrate-up                     # Apply database migrations
+
+# Run each in a separate terminal
+make run-api                        # Public API   → :8080
+make run-admin                      # Admin API    → :8082
+make run-socket                     # WebSocket    → :8081
+make run-consumer                   # Event consumer
 ```
 
-## Development
-
-### Available Commands
+## Development Commands
 
 | Command              | Description                              |
 | -------------------- | ---------------------------------------- |
-| `make run-api`       | Start the API server                     |
-| `make run-socket`    | Start the WebSocket server               |
-| `make run-consumer`  | Start the NATS consumer                  |
 | `make build`         | Build all binaries to `bin/`             |
 | `make sqlc`          | Generate Go code from SQL queries        |
 | `make swagger`       | Generate Swagger documentation           |
 | `make migrate-up`    | Apply database migrations                |
 | `make migrate-down`  | Rollback database migrations             |
-| `make docker-up`     | Start infrastructure via Docker Compose  |
+| `make docker-up`     | Start all services via Docker Compose    |
 | `make docker-build`  | Build Docker images                      |
-| `make k8s-dev`       | Deploy to Kubernetes (dev overlay)       |
-
-### Adding a New API Endpoint
-
-1. Define request/response structs in `internal/model/`
-2. Add SQL queries in `db/query/` and run `make sqlc`
-3. Implement repository in `internal/repository/`
-4. Implement service in `internal/service/`
-5. Implement handler in `internal/handler/`
-6. Register routes in `internal/app/api/router.go`
-7. Run `make swagger` to update API docs
-
-### Adding a New Event Handler
-
-1. Define the subject in `pkg/nats/subjects.go`
-2. Implement the handler in `internal/consumer/handler/`
-3. Register it in `internal/app/consumer/consumer.go`
-
-### Database Changes
-
-```bash
-# Create migration files
-# db/migration/000002_<name>.up.sql
-# db/migration/000002_<name>.down.sql
-
-# Apply
-make migrate-up
-```
-
-## Deployment
-
-The project supports deployment via **Docker Compose** for local/staging environments and **Kubernetes** with kustomize overlays for production.
-
-```bash
-# Kubernetes (dev)
-make k8s-dev
-
-# Kubernetes (prod) — apply production overlay
-kubectl apply -k deploy/k8s/overlays/prod
-```
-
-Logging is handled through the **ELK stack** (Elasticsearch, Logstash, Kibana) with structured log output via Go's `slog` package.
+| `make k8s-dev`       | Deploy to Kubernetes (dev)               |
+| `make k8s-prod`      | Deploy to Kubernetes (prod)              |

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	es "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
+	es "github.com/hoangquan/retail-store-api/pkg/elasticsearch"
 )
 
 type SearchRepository struct {

@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/hoangquan/retail-store-api/internal/app/consumer"
+	"github.com/hoangquan/retail-store-api/internal/app/admin"
 )
 
 func main() {
-	app, err := consumer.New()
+	app, err := admin.New()
 	if err != nil {
 		log.Fatal(err)
 	}

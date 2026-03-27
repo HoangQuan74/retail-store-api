@@ -2,10 +2,11 @@ package app
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
-	"github.com/kainguyen/retail-store-api/internal/config"
-	appnats "github.com/kainguyen/retail-store-api/pkg/nats"
-	"github.com/kainguyen/retail-store-api/pkg/notification"
+	db "github.com/hoangquan/retail-store-api/db/sqlc"
+	"github.com/hoangquan/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/pkg/auth"
+	pkgNats "github.com/hoangquan/retail-store-api/pkg/nats"
+	"github.com/hoangquan/retail-store-api/pkg/notification"
 )
 
 type AppContext struct {
@@ -13,6 +14,7 @@ type AppContext struct {
 	Queries      *db.Queries
 	ESClient     *elasticsearch.Client
 	ProductIndex string
-	Publisher    *appnats.Publisher
+	Publisher    *pkgNats.Publisher
 	Hub          *notification.Hub
+	JWTManager   *auth.JWTManager
 }

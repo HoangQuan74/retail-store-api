@@ -12,11 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/kainguyen/retail-store-api/internal/app"
-	"github.com/kainguyen/retail-store-api/internal/config"
-	"github.com/kainguyen/retail-store-api/pkg/database"
-	"github.com/kainguyen/retail-store-api/pkg/logger"
-	"github.com/kainguyen/retail-store-api/pkg/notification"
+	"github.com/hoangquan/retail-store-api/internal/app"
+	"github.com/hoangquan/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/pkg/database"
+	"github.com/hoangquan/retail-store-api/pkg/logger"
+	"github.com/hoangquan/retail-store-api/pkg/notification"
 )
 
 type App struct {

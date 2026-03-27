@@ -6,18 +6,18 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
-	"github.com/kainguyen/retail-store-api/internal/model/request"
-	"github.com/kainguyen/retail-store-api/internal/repository"
-	appnats "github.com/kainguyen/retail-store-api/pkg/nats"
+	db "github.com/hoangquan/retail-store-api/db/sqlc"
+	"github.com/hoangquan/retail-store-api/internal/model/request"
+	"github.com/hoangquan/retail-store-api/internal/repository"
+	pkgNats "github.com/hoangquan/retail-store-api/pkg/nats"
 )
 
 type ProductService struct {
 	repo      *repository.ProductRepository
-	publisher *appnats.Publisher
+	publisher *pkgNats.Publisher
 }
 
-func NewProductService(queries *db.Queries, publisher *appnats.Publisher) *ProductService {
+func NewProductService(queries *db.Queries, publisher *pkgNats.Publisher) *ProductService {
 	return &ProductService{
 		repo:      repository.NewProductRepository(queries),
 		publisher: publisher,
@@ -44,7 +44,7 @@ func (s *ProductService) Create(ctx context.Context, req request.CreateProductRe
 		return product, err
 	}
 
-	s.publishEvent(ctx, appnats.SubjectProductCreated, map[string]interface{}{
+	s.publishEvent(ctx, pkgNats.SubjectProductCreated, map[string]interface{}{
 		"id":          product.ID,
 		"name":        product.Name,
 		"description": req.Description,
@@ -88,7 +88,7 @@ func (s *ProductService) Update(ctx context.Context, id int64, req request.Updat
 		return product, err
 	}
 
-	s.publishEvent(ctx, appnats.SubjectProductUpdated, map[string]interface{}{
+	s.publishEvent(ctx, pkgNats.SubjectProductUpdated, map[string]interface{}{
 		"id":          product.ID,
 		"name":        product.Name,
 		"description": req.Description,
@@ -105,7 +105,7 @@ func (s *ProductService) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	s.publishEvent(ctx, appnats.SubjectProductDeleted, map[string]interface{}{
+	s.publishEvent(ctx, pkgNats.SubjectProductDeleted, map[string]interface{}{
 		"id": id,
 	})
 

@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
-	"github.com/kainguyen/retail-store-api/internal/model/request"
-	"github.com/kainguyen/retail-store-api/internal/repository"
+	db "github.com/hoangquan/retail-store-api/db/sqlc"
+	"github.com/hoangquan/retail-store-api/internal/model/request"
+	"github.com/hoangquan/retail-store-api/internal/repository"
 )
 
 type CategoryService struct {

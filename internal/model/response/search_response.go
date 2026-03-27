@@ -1,6 +1,6 @@
 package response
 
-import "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
+import "github.com/hoangquan/retail-store-api/pkg/elasticsearch"
 
 type SearchProductResponse struct {
 	Items []elasticsearch.ProductDocument `json:"items"`

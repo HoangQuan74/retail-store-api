@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/kainguyen/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/internal/config"
 )
 
 func NewClient(cfg config.ElasticsearchConfig) (*elasticsearch.Client, error) {

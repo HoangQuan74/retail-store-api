@@ -6,7 +6,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/nats-io/nats.go/jetstream"
-	es "github.com/kainguyen/retail-store-api/pkg/elasticsearch"
+	es "github.com/hoangquan/retail-store-api/pkg/elasticsearch"
 )
 
 type SearchIndexHandler struct {

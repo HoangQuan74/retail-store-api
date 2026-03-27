@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kainguyen/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/internal/config"
 )
 
 func New(cfg config.LogConfig) *slog.Logger {

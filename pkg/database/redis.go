@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/kainguyen/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

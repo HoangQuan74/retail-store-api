@@ -5,27 +5,18 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kainguyen/retail-store-api/internal/app"
-	"github.com/kainguyen/retail-store-api/internal/model/request"
-	"github.com/kainguyen/retail-store-api/internal/service"
-	pkgResponse "github.com/kainguyen/retail-store-api/pkg/response"
+	"github.com/hoangquan/retail-store-api/internal/app"
+	"github.com/hoangquan/retail-store-api/internal/model/request"
+	"github.com/hoangquan/retail-store-api/internal/service"
+	pkgResponse "github.com/hoangquan/retail-store-api/pkg/response"
 )
 
 type CategoryHandler struct {
 	service *service.CategoryService
 }
 
-func NewCategoryHandler(ctx *app.AppContext, router *gin.Engine) *CategoryHandler {
-	h := &CategoryHandler{service: service.NewCategoryService(ctx.Queries)}
-	categories := router.Group("/api/v1/categories")
-	{
-		categories.POST("", h.Create)
-		categories.GET("", h.List)
-		categories.GET("/:id", h.GetByID)
-		categories.PUT("/:id", h.Update)
-		categories.DELETE("/:id", h.Delete)
-	}
-	return h
+func NewCategoryHandler(ctx *app.AppContext) *CategoryHandler {
+	return &CategoryHandler{service: service.NewCategoryService(ctx.Queries)}
 }
 
 // @Summary	Create a category

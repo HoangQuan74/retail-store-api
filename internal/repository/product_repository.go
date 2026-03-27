@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	db "github.com/kainguyen/retail-store-api/db/sqlc"
+	db "github.com/hoangquan/retail-store-api/db/sqlc"
 )
 
 type ProductRepository struct {
