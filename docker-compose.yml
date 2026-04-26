@@ -65,7 +65,7 @@ services:
       POSTGRES_PASSWORD: 160402
       POSTGRES_DB: retail_store
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -73,7 +73,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     restart: unless-stopped
 
   nats:
@@ -83,7 +83,14 @@ services:
       - "4222:4222"
       - "8222:8222"
     restart: unless-stopped
-
+  
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    ports: 
+      - "9093:9092"
+    environment:
+    restart: unless-stopped
+  
   # ───── ELK ─────
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0

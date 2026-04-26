@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/hoangquan/retail-store-api/internal/config"
+	"github.com/hoangquan/retail-store-api/pkg/config"
 )
 
 func NewPostgres(cfg config.DBConfig) (*pgxpool.Pool, error) {

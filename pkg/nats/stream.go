@@ -12,7 +12,7 @@ func EnsureStream(ctx context.Context, js jetstream.JetStream) (jetstream.Stream
 	stream, err := js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
 		Name:      StreamRetailStore,
 		Subjects:  StreamSubjects,
-		Retention: jetstream.WorkQueuePolicy,
+		Retention: jetstream.LimitsPolicy,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create stream: %w", err)

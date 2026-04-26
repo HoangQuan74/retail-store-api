@@ -1,27 +1,27 @@
 # ───── Dev (local) ─────
 run-api:
-	go run cmd/api/main.go
+	go run services/api/cmd/main.go
 
 run-admin:
-	go run cmd/admin/main.go
+	go run services/admin/cmd/main.go
 
 run-socket:
-	go run cmd/socket/main.go
+	go run services/socket/cmd/main.go
 
 run-consumer:
-	go run cmd/consumer/main.go
+	go run services/consumer/cmd/main.go
 
 build:
-	go build -o bin/api cmd/api/main.go
-	go build -o bin/admin cmd/admin/main.go
-	go build -o bin/socket cmd/socket/main.go
-	go build -o bin/consumer cmd/consumer/main.go
+	go build -o bin/api services/api/cmd/main.go
+	go build -o bin/admin services/admin/cmd/main.go
+	go build -o bin/socket services/socket/cmd/main.go
+	go build -o bin/consumer services/consumer/cmd/main.go
 
 sqlc:
 	sqlc generate
 
 swagger:
-	$(HOME)/go/bin/swag init -g cmd/api/main.go --parseDependency --parseInternal
+	$(HOME)/go/bin/swag init -g services/api/cmd/main.go --parseDependency --parseInternal
 
 migrate-up:
 	migrate -path db/migration -database "postgresql://postgres:postgres@localhost:5432/retail_store?sslmode=disable" -verbose up

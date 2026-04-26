@@ -18,6 +18,16 @@ spec:
                 name: api
                 port:
                   number: 8080
+    - host: admin.retail-store.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin
+                port:
+                  number: 8082
     - host: ws.retail-store.local
       http:
         paths:

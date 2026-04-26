@@ -8,7 +8,7 @@ RUN go mod download
 COPY . .
 
 ARG SERVICE=api
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/service ./cmd/${SERVICE}/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/service ./services/${SERVICE}/cmd/main.go
 
 FROM alpine:3.19
 
